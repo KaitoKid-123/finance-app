@@ -1,0 +1,35 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  quick-check:
+    name: Quick validation for PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install test dependencies
+        run: pip install -r requirements.txt pytest flake8
+
+      - name: Syntax check (fast)
+        run: |
+          python -m py_compile src/jobs/*.py src/transforms/*.py src/utils/*.py
+          echo "Syntax OK"
+
+      - name: Lint (fast, no warnings)
+        run: flake8 src/ --max-line-length=120 --count
+
+      - name: Run fast unit tests only
+        run: |
+          pytest tests/unit/ -v --tb=short -x  # -x: stop on first failure
+        env:
+          PYSPARK_PYTHON: python3

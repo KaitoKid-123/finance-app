@@ -1,0 +1,8 @@
+# Platform team phải review Dockerfile và requirements
+Dockerfile          @platform-team
+requirements.txt    @platform-team @team-finance
+pyproject.toml      @platform-team
+
+# Finance team owns their own code
+src/                @team-finance
+tests/              @team-finance
