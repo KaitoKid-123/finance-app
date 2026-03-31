@@ -31,12 +31,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-
+      # Python 3.10 pre-installed in runner image (python:3.10-bullseye)
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
