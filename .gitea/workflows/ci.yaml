@@ -63,6 +63,7 @@ jobs:
         env:
           PYSPARK_PYTHON: python3
           PYSPARK_DRIVER_PYTHON: python3
+          PYTHONPATH: ${{ github.workspace }}
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
