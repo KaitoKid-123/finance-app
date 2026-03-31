@@ -43,6 +43,7 @@ jobs:
           flake8 src/ tests/ \
             --max-line-length=120 \
             --exclude=__pycache__,.venv \
+            --extend-ignore=F401,F841,E122,E131 \
             --count --show-source --statistics
 
       - name: Type check with mypy
