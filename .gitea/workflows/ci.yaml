@@ -129,6 +129,7 @@ jobs:
           repository: data-platform/platform-dags
           token: ${{ secrets.BOT_TOKEN }}
           path: platform-dags
+          server_url: http://gitea-http.platform-ops:3000
 
       - name: Update image tag in SparkApplication YAMLs
         run: |
