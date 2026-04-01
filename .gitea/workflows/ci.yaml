@@ -97,24 +97,12 @@ jobs:
 
       - name: Install Docker CLI
         run: |
-          apt-get update -qq && apt-get install -y -qq docker.io iptables
-
-      - name: Route registry auth to internal service
-        run: |
-          # Gitea auth realm returns external IP:NodePort (103.249.117.202:30300) which is
-          # unreachable inside the cluster. DNAT redirects it to the Gitea pod IP:3000.
-          # Must use pod IP (via headless gitea-ssh service), NOT ClusterIP — Cilium eBPF
-          # intercepts ClusterIP traffic and bypasses iptables, causing connection to hang.
-          GITEA_POD_IP=$(getent hosts gitea-ssh.platform-ops.svc.cluster.local | awk '{print $1}' | head -1)
-          iptables -t nat -I OUTPUT -d 103.249.117.202/32 -p tcp --dport 30300 \
-            -j DNAT --to-destination "${GITEA_POD_IP}:3000"
-          echo "Routed 103.249.117.202:30300 → ${GITEA_POD_IP}:3000"
+          apt-get update -qq && apt-get install -y -qq docker.io
 
       - name: Log in to Gitea Container Registry
         run: |
-          mkdir -p ~/.docker
-          ENCODED=$(printf '%s:%s' "${REGISTRY_USERNAME}" "${REGISTRY_TOKEN}" | base64 -w0)
-          echo "{\"auths\":{\"${REGISTRY}\":{\"auth\":\"${ENCODED}\"}}}" > ~/.docker/config.json
+          echo "${REGISTRY_TOKEN}" | docker login "${REGISTRY}" \
+            -u "${REGISTRY_USERNAME}" --password-stdin
         env:
           REGISTRY: ${{ env.REGISTRY }}
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
