@@ -69,13 +69,13 @@ jobs:
           PYSPARK_DRIVER_PYTHON: python3
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
-        if: always()
-        continue-on-error: true
-        with:
-          name: coverage-report
-          path: coverage.xml
+      # - name: Upload coverage report
+      #   uses: actions/upload-artifact@v3
+      #   if: always()
+      #   continue-on-error: true
+      #   with:
+      #     name: coverage-report
+      #     path: coverage.xml
 
   build-push:
     name: Build & Push Image
