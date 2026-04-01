@@ -95,31 +95,24 @@ jobs:
           echo "tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
           echo "IMAGE_TAG=${SHORT_SHA}" >> $GITHUB_ENV
 
+      - name: Install Docker CLI
+        run: |
+          apt-get update -qq && apt-get install -y -qq docker.io
+
       - name: Log in to Gitea Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          echo "${{ secrets.REGISTRY_TOKEN }}" | \
+            docker login ${{ env.REGISTRY }} \
+              --username "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          load: true
-
-      - name: Push to Gitea Registry
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      - name: Build and Push Docker image
+        run: |
+          docker build \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            .
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   update-spark-apps:
     name: Update image tag in platform-dags
