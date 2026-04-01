@@ -97,7 +97,16 @@ jobs:
 
       - name: Install Docker CLI
         run: |
-          apt-get update -qq && apt-get install -y -qq docker.io
+          apt-get update -qq && apt-get install -y -qq docker.io iptables
+
+      - name: Route registry auth to internal service
+        run: |
+          # Gitea auth realm returns external IP:NodePort which is unreachable inside cluster.
+          # DNAT redirects 103.249.117.202:30300 → gitea ClusterIP:3000 in pod netns.
+          GITEA_IP=$(getent hosts gitea-http.platform-ops | awk '{print $1}' | head -1)
+          iptables -t nat -I OUTPUT -d 103.249.117.202/32 -p tcp --dport 30300 \
+            -j DNAT --to-destination "${GITEA_IP}:3000"
+          echo "Routed 103.249.117.202:30300 → ${GITEA_IP}:3000"
 
       - name: Log in to Gitea Container Registry
         run: |
