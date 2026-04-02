@@ -8,7 +8,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/etl
+  IMAGE_REPO: ${{ github.repository_owner }}/finance-app
+  IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/etl
 
 jobs:
   test:
@@ -82,8 +83,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true
@@ -105,12 +106,13 @@ jobs:
 
       - name: Update image tag in SparkApplication YAMLs
         run: |
-          IMAGE_TAG="${{ github.sha }}"
-          NEW_IMAGE="ghcr.io/${{ github.repository }}/etl:${IMAGE_TAG}"
+          # Convert SHA to lowercase (Docker tags must be lowercase)
+          IMAGE_TAG="${GITHUB_SHA,,}"
+          NEW_IMAGE="${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
           echo "Updating SparkApp YAMLs to: ${NEW_IMAGE}"
 
           find platform-dags/dags/finance/spark-apps/ -name "*.yaml" -exec \
-            sed -i "s|image: ghcr.io/${{ github.repository }}/etl:.*|image: ${NEW_IMAGE}|" {} \;
+            sed -i "s|image: ${{ env.IMAGE_NAME }}:.*|image: ${NEW_IMAGE}|" {} \;
 
           if git diff --quiet; then
             echo "No changes needed"
