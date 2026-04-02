@@ -102,7 +102,7 @@ jobs:
         with:
           repository: KaitoKid-123/platform-dags
           path: platform-dags
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_WRITE }}
 
       - name: Update image tag in SparkApplication YAMLs
         run: |
@@ -122,4 +122,4 @@ jobs:
           git config user.name "GitHub Actions CI" && \
           git add dags/finance/spark-apps/ && \
           git commit -m "chore: update etl image tag [ci skip]" && \
-          git push
+          git push https://x-access-token:${{ secrets.PAT_WRITE }}@github.com/KaitoKid-123/platform-dags.git
