@@ -39,8 +39,8 @@ finance-app/
 |   +-- unit/
 |       +-- test_currency.py       # Unit test cho currency transform
 |       +-- test_deduplication.py  # Unit test cho dedup
-+-- .gitea/workflows/
-|   +-- ci.yaml                    # CI: test → build → push image → update platform-dags
++-- .github/workflows/
+|   +-- ci.yaml                    # CI: test → build → push to GHCR → update platform-dags
 |   +-- pr-check.yaml              # PR check: lint + test
 +-- Dockerfile                     # Image: Spark 3.5.0 + Python deps + Iceberg JARs
 +-- requirements.txt               # Python dependencies
@@ -70,14 +70,14 @@ Doi soat hang thang — so sanh `transactions_silver` voi source of truth:
 ## CI/CD Pipeline
 
 ```
-Push to main → Lint (flake8) → Type check (mypy) → Unit tests (70% coverage)
-                                                          ↓
-                                            Build Docker image → Push to Gitea Registry
-                                                                          ↓
-                                                   Update image tag in platform-dags/spark-apps/
+Push to main → Lint (flake8) → Unit tests (70% coverage)
+                                                    ↓
+                                    Build Docker image → Push to GHCR
+                                                              ↓
+                                          Update image tag in platform-dags/spark-apps/
 ```
 
-- **Registry**: `gitea-http.platform-ops:3000/team-finance/etl:<git-sha>`
+- **Registry**: `ghcr.io/KaitoKid-123/finance-app/etl:<git-sha>`
 - **Trigger**: Push to `main` thay doi `src/`, `tests/`, `Dockerfile`, `requirements.txt`.
 - **Coverage**: Toi thieu 70%.
 - **Auto-update**: CI tu dong cap nhat image tag trong `platform-dags/dags/finance/spark-apps/*.yaml`.

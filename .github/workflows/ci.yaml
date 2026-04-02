@@ -1,0 +1,124 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/etl
+
+jobs:
+  test:
+    name: Unit Tests & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Java
+        run: |
+          apt-get update -qq && apt-get install -y -qq default-jdk-headless
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8
+
+      - name: Lint with flake8
+        run: |
+          flake8 src/ tests/ \
+            --max-line-length=120 \
+            --exclude=__pycache__,.venv \
+            --extend-ignore=F401,F841,E122,E131 \
+            --count --show-source --statistics
+
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ \
+            -v \
+            --tb=short \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=70
+        env:
+          PYSPARK_PYTHON: python3
+          PYSPARK_DRIVER_PYTHON: python3
+          PYTHONPATH: ${{ github.workspace }}
+
+  build-push:
+    name: Build & Push to GHCR
+    needs: [test]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+  update-spark-yaml:
+    name: Update Spark image tag in platform-dags
+    needs: [build-push]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout platform-dags
+        uses: actions/checkout@v4
+        with:
+          repository: KaitoKid-123/platform-dags
+          path: platform-dags
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update image tag in SparkApplication YAMLs
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          NEW_IMAGE="ghcr.io/${{ github.repository }}/etl:${IMAGE_TAG}"
+          echo "Updating SparkApp YAMLs to: ${NEW_IMAGE}"
+
+          find platform-dags/dags/finance/spark-apps/ -name "*.yaml" -exec \
+            sed -i "s|image: ghcr.io/${{ github.repository }}/etl:.*|image: ${NEW_IMAGE}|" {} \;
+
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+
+          git config user.email "ci@github.com"
+          git config user.name "GitHub Actions CI"
+          git add dags/finance/spark-apps/
+          git commit -m "chore: update etl image tag [ci skip]"
+          git push
