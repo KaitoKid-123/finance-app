@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_REPO: ${{ github.repository_owner }}/finance-app
-  IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/etl
+  IMAGE_REPO: kaitokid-123/finance-app
+  IMAGE_NAME: ghcr.io/kaitokid-123/finance-app/etl
 
 jobs:
   test:
