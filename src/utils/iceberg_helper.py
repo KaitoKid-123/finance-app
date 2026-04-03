@@ -47,12 +47,11 @@ def upsert_iceberg(
     if not table_exists(spark, target_table):
         logger.info("creating_table", table=full_name)
         if partition_cols:
-            partition_spec = ", ".join(
-                [f"days({col})" if "date" in col.lower() or "time" in col.lower()
-                 else col for col in partition_cols]
-            )
+            # partitionedBy() requires column references, not SQL strings.
+            # Iceberg uses day granularity for DATE columns automatically.
+            partition_cols_ref = [F.col(c) for c in partition_cols]
             source_df.writeTo(full_name) \
-                .partitionedBy(F.expr(partition_spec)) \
+                .partitionedBy(*partition_cols_ref) \
                 .using("iceberg") \
                 .createOrReplace()
         else:
@@ -104,13 +103,13 @@ def compact_table(spark: SparkSession, full_table_name: str) -> None:
             )
         )
     """)
-    # Expire old snapshots (giữ lại 3 ngày)
+    # Expire old snapshots (giữ lại 3 ngày) — compute timestamp in Python
+    from datetime import datetime, timedelta
+    expire_ts = (datetime.utcnow() - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
     spark.sql(f"""
         CALL iceberg.system.expire_snapshots(
             table => '{full_table_name}',
-            older_than => TIMESTAMP '{{}}'.format(
-                (F.current_timestamp() - F.expr('INTERVAL 3 DAYS'))
-            ),
+            older_than => TIMESTAMP '{expire_ts}',
             retain_last => 5
         )
     """)
