@@ -1,3 +1,4 @@
+from typing import List
 """Deduplication strategies cho data pipeline."""
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
@@ -5,7 +6,7 @@ from pyspark.sql import functions as F
 
 def dedup_by_latest(
     df: DataFrame,
-    id_cols: list[str],
+    id_cols: List[str],
     timestamp_col: str,
 ) -> DataFrame:
     """
@@ -30,7 +31,7 @@ def dedup_by_latest(
 
 def dedup_exact(
     df: DataFrame,
-    subset_cols: list[str] = None,
+    subset_cols: List[str] = None,
 ) -> DataFrame:
     """
     Loại bỏ exact duplicate rows.
@@ -45,7 +46,7 @@ def dedup_exact(
     return df.dropDuplicates()
 
 
-def count_duplicates(df: DataFrame, id_cols: list[str]) -> int:
+def count_duplicates(df: DataFrame, id_cols: List[str]) -> int:
     """Trả về số lượng duplicate records."""
     total = df.count()
     unique = df.dropDuplicates(id_cols).count()

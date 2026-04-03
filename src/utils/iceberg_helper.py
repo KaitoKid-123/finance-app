@@ -1,5 +1,5 @@
 """Helper functions cho Iceberg table operations."""
-from typing import Optional
+from typing import Optional, List
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
 import structlog
@@ -26,8 +26,8 @@ def upsert_iceberg(
     spark: SparkSession,
     source_df: DataFrame,
     target_table: str,
-    merge_keys: list[str],
-    partition_cols: Optional[list[str]] = None,
+    merge_keys: List[str],
+    partition_cols: Optional[List[str]] = None,
 ) -> dict:
     """
     Upsert (MERGE INTO) vào Iceberg table.

@@ -1,3 +1,4 @@
+from typing import List
 """Helper functions cho S3/Ceph operations."""
 import os
 import boto3
@@ -35,7 +36,7 @@ def file_exists(bucket: str, key: str) -> bool:
         return False
 
 
-def list_files(bucket: str, prefix: str) -> list[str]:
+def list_files(bucket: str, prefix: str) -> List[str]:
     """Liệt kê các file trong S3 bucket với prefix."""
     client = get_s3_client()
     paginator = client.get_paginator("list_objects_v2")
