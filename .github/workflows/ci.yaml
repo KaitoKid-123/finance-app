@@ -112,7 +112,7 @@ jobs:
           echo "Updating SparkApp YAMLs to: ${NEW_IMAGE}"
 
           cd platform-dags && \
-          find dags/finance/spark-apps/ -name "*.yaml" -exec \
+          find dags -path "*/spark-apps/*.yaml" -exec \
             sed -i "s|image: ${{ env.IMAGE_NAME }}:.*|image: ${NEW_IMAGE}|" {} \; && \
           if git diff --quiet; then
             echo "No changes needed"
@@ -120,6 +120,6 @@ jobs:
           fi && \
           git config user.email "ci@github.com" && \
           git config user.name "GitHub Actions CI" && \
-          git add dags/finance/spark-apps/ && \
+          git add dags/**/spark-apps/ && \
           git commit -m "chore: update etl image tag [ci skip]" && \
           git push https://x-access-token:${{ secrets.PAT_WRITE }}@github.com/KaitoKid-123/platform-dags.git

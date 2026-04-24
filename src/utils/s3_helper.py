@@ -9,12 +9,12 @@ logger = structlog.get_logger()
 
 
 def get_s3_client():
-    """Tạo boto3 S3 client trỏ đến Ceph RGW."""
+    """Tạo boto3 S3 client trỏ đến MinIO (S3-compatible)."""
     return boto3.client(
         "s3",
         endpoint_url=os.environ.get(
             "S3_ENDPOINT",
-            "http://rook-ceph-rgw-data-store-external.rook-ceph:80"
+            "http://minio.platform-storage:9000"
         ),
         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
